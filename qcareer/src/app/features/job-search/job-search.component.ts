@@ -5,7 +5,7 @@ import { Router } from "@angular/router";
 import { JobListingsService, JobListing } from "../../core/services/job-listings.service";
 import { JobService } from "../../core/services/job.service";
 
-const CLAUDE_MODEL = "claude-sonnet-4-20250514";
+const CLAUDE_MODEL = "claude-sonnet-4-6";
 
 // RSS feeds from major tech companies (CORS-proxied via allorigins)
 const RSS_FEEDS = [
