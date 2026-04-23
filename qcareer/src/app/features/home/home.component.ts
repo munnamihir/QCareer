@@ -1,5 +1,7 @@
-import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, inject, OnInit } from '@angular/core';
+import { RouterLink, Router } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
+
 @Component({ selector:'app-home', standalone:true, imports:[RouterLink], template:`
 <div style="min-height:100vh;position:relative;z-index:1;">
   <nav style="position:fixed;top:0;left:0;right:0;z-index:100;padding:1rem 2.5rem;display:flex;align-items:center;justify-content:space-between;background:rgba(3,8,16,0.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(99,102,241,0.12);">
@@ -20,10 +22,10 @@ import { RouterLink } from '@angular/router';
         Land your dream job<br><span style="color:#6366f1;">at quantum speed</span>
       </h1>
       <p style="font-size:0.95rem;color:#64748b;max-width:560px;margin:0 auto 0.75rem;line-height:1.9;">Track every application. Let Claude tailor your resume, write cover letters, run mock interviews, and coach your salary negotiation.</p>
-      <p style="font-size:0.68rem;color:rgba(99,102,241,0.45);margin-bottom:3rem;font-family:'JetBrains Mono',monospace;">AI runs directly in your browser · your code stays yours</p>
+      <p style="font-size:0.68rem;color:rgba(99,102,241,0.45);margin-bottom:3rem;font-family:'JetBrains Mono',monospace;">AI runs directly in your browser · your data stays yours</p>
       <div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;margin-bottom:4rem;">
         <a routerLink="/login" class="btn btn-primary" style="font-size:0.85rem;padding:.8rem 2.25rem;">Start hunting free →</a>
-        <a routerLink="/tracker" class="btn btn-outline" style="font-size:0.85rem;padding:.8rem 2.25rem;">View Kanban demo</a>
+        <a routerLink="/jobs" class="btn btn-outline" style="font-size:0.85rem;padding:.8rem 2.25rem;">Browse jobs</a>
       </div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
         @for (f of features; track f.title) {
@@ -40,15 +42,55 @@ import { RouterLink } from '@angular/router';
 </div>
 <style>@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.2;}}</style>
 ` })
-export class HomeComponent {
+export class HomeComponent implements OnInit {
+  private auth = inject(AuthService);
+  private router = inject(Router);
+
   features = [
-    { icon:"\uD83D\uDDC2\uFE0F", title:"Kanban Job Tracker", desc:"Drag cards across Wishlist, Applied, Interview, Offer. Never lose track of an application." },
-    { icon:"\uD83D\uDCDD", title:"AI Resume Tailor", desc:"Paste a job description + your resume. Claude rewrites your bullets to match the role perfectly." },
-    { icon:"\u2709\uFE0F", title:"Cover Letter Generator", desc:"Company-specific, role-specific, tone-specific. Claude writes it in seconds." },
-    { icon:"\uD83C\uDFA4", title:"Mock Interview Prep", desc:"Claude plays interviewer. Real questions, real feedback before the real thing." },
-    { icon:"\uD83D\uDCB0", title:"Salary Negotiation Coach", desc:"Know your worth. Claude analyzes market rates and scripts your counter-offer." },
-    { icon:"\uD83D\uDCCA", title:"Application Analytics", desc:"Funnel visualization, response rates, excitement scores. Data-driven job hunting." },
+    { icon:"🗂️", title:"Kanban Job Tracker", desc:"Drag cards across Wishlist, Applied, Interview, Offer. Never lose track of an application." },
+    { icon:"📝", title:"AI Resume Tailor", desc:"Paste a job description + your resume. Claude rewrites your bullets to match the role perfectly." },
+    { icon:"✉️", title:"Cover Letter Generator", desc:"Company-specific, role-specific, tone-specific. Claude writes it in seconds." },
+    { icon:"🎤", title:"Mock Interview Prep", desc:"Claude plays interviewer. Real questions, real feedback before the real thing." },
+    { icon:"💰", title:"Salary Negotiation Coach", desc:"Know your worth. Claude analyzes market rates and scripts your counter-offer." },
+    { icon:"📊", title:"Application Analytics", desc:"Funnel visualization, response rates, excitement scores. Data-driven job hunting." },
   ];
+
+  ngOnInit() {
+    // If user lands on home with OAuth token in URL, wait for auth then redirect
+    const url = window.location.href;
+    if (url.includes('access_token') || url.includes('code=')) {
+      // Wait for Supabase to process the token
+      const check = setInterval(() => {
+        if (!this.auth.loading()) {
+          clearInterval(check);
+          if (this.auth.isLoggedIn()) {
+            this.router.navigate(['/dashboard']);
+          }
+        }
+      }, 100);
+      // Timeout after 5s
+      setTimeout(() => clearInterval(check), 5000);
+      return;
+    }
+
+    // If already logged in, go to dashboard
+    if (!this.auth.loading() && this.auth.isLoggedIn()) {
+      this.router.navigate(['/dashboard']);
+      return;
+    }
+
+    // Wait for auth to load, then redirect if logged in
+    const waitCheck = setInterval(() => {
+      if (!this.auth.loading()) {
+        clearInterval(waitCheck);
+        if (this.auth.isLoggedIn()) {
+          this.router.navigate(['/dashboard']);
+        }
+      }
+    }, 100);
+    setTimeout(() => clearInterval(waitCheck), 3000);
+  }
+
   ngAfterViewInit() {
     const c = document.getElementById("hero-canvas") as HTMLCanvasElement; if (!c) return;
     const ctx = c.getContext("2d")!; let W=0,H=0;
