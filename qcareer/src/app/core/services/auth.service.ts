@@ -19,8 +19,21 @@ export class AuthService {
     this.sb.auth.onAuthStateChange((_e, session) => { this._session.set(session); if (session) this.loadUser(session.user.id); else { this._dbUser.set(null); this._loading.set(false); } });
   }
   private async loadUser(id: string) { const { data } = await this.sb.from('users').select('*').eq('id', id).single(); this._dbUser.set(data as User); this._loading.set(false); }
-  async signInWithGitHub() { await this.sb.auth.signInWithOAuth({ provider: 'github', options: { redirectTo: `${window.location.origin}/dashboard` } }); }
-  async signInWithEmail(email: string) { const { error } = await this.sb.auth.signInWithOtp({ email, options: { emailRedirectTo: `${window.location.origin}/dashboard` } }); if (error) throw error; }
+  
   async signOut() { await this.sb.auth.signOut(); this.router.navigate(['/']); }
+  async signInWithGitHub() {
+  await this.sb.auth.signInWithOAuth({
+    provider: 'github',
+    options: { redirectTo: window.location.origin }
+  });
+}
+
+async signInWithEmail(email: string) {
+  const { error } = await this.sb.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: window.location.origin }
+  });
+  if (error) throw error;
+}
   get client() { return this.sb; }
 }
