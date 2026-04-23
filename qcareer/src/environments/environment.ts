@@ -1,1 +1,1 @@
-export const environment = { production: false, supabaseUrl: 'YOUR_SUPABASE_URL', supabaseAnonKey: 'YOUR_SUPABASE_ANON_KEY' };
+export const environment = { production: false, supabaseUrl: 'https://umlesjybypmaeitddohj.supabase.co', supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVtbGVzanlieXBtYWVpdGRkb2hqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5NTc3OTcsImV4cCI6MjA5MjUzMzc5N30.KdVWaXB7VYXasYiKTN5b0KkxbTfLyQZ8-hsslOCuCi4' };
