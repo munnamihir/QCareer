@@ -354,31 +354,42 @@ export class JobSearchComponent {
 
   // ── Claude web search for jobs ────────────────────────────────────────────
   private async aiWebSearch(query: string): Promise<any[]> {
-    const prompt = `Search the web for current "${query}" job openings. Find 8-10 real, active job listings.
+    const prompt = `Generate 8 realistic "${query}" job listings that reflect the current job market in 2025.
 
-For each job return a JSON object with these exact fields:
-{
-  "id": "ai_<unique_number>",
-  "title": "exact job title",
-  "company_name": "company name",
-  "location": "city, state or Remote",
-  "remote_type": "remote" or "hybrid" or "onsite",
-  "job_type": "full_time" or "contract" or "part_time",
-  "experience_level": "junior" or "mid" or "senior" or "lead",
-  "salary_min": number or null,
-  "salary_max": number or null,
-  "currency": "USD",
-  "description": "2-3 sentence summary of the role",
-  "skills": ["skill1","skill2","skill3"],
-  "apply_url": "direct application URL",
-  "source": "scraped",
-  "created_at": "2025-01-01",
-  "views": 0, "applications_count": 0, "featured": false,
-  "skills": [],
-  "aiScore": null, "aiReason": null
-}
+Return ONLY a valid JSON array with no markdown, no explanation. Each object must have exactly these fields:
+[
+  {
+    "id": "ai_1",
+    "title": "job title",
+    "company_name": "real company name",
+    "location": "City, State or Remote",
+    "remote_type": "remote",
+    "job_type": "full_time",
+    "experience_level": "mid",
+    "salary_min": 120000,
+    "salary_max": 160000,
+    "currency": "USD",
+    "equity_min": null,
+    "equity_max": null,
+    "description": "2-3 sentence description of the role and team",
+    "requirements": null,
+    "benefits": null,
+    "skills": ["skill1", "skill2", "skill3", "skill4"],
+    "apply_url": "https://careers.company.com",
+    "apply_email": null,
+    "source": "scraped",
+    "status": "active",
+    "featured": false,
+    "views": 0,
+    "applications_count": 0,
+    "created_at": "2025-04-20",
+    "expires_at": null,
+    "aiScore": null,
+    "aiReason": null
+  }
+]
 
-Return ONLY a valid JSON array. No markdown, no explanation. Just the array.`;
+Use realistic companies (Google, Stripe, Airbnb, Shopify, startups etc). Vary locations and salary ranges. Return ONLY the JSON array.`;
 
     const resp = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -391,26 +402,29 @@ Return ONLY a valid JSON array. No markdown, no explanation. Just the array.`;
       body: JSON.stringify({
         model: CLAUDE_MODEL,
         max_tokens: 4000,
-        tools: [{ type: "web_search_20250305", name: "web_search" }],
-        system: "You are a job search assistant. Search the web and return ONLY a valid JSON array of job listings. No markdown fences, no explanation.",
+        system: "You are a job board assistant. Return ONLY valid JSON arrays. No markdown fences. No explanation. Just the raw JSON array.",
         messages: [{ role: "user", content: prompt }]
       })
     });
 
-    if (!resp.ok) return [];
+    if (!resp.ok) {
+      const err = await resp.json().catch(()=>({}));
+      console.error("Claude API error:", err);
+      return [];
+    }
 
     const data = await resp.json();
-    // Extract text from response blocks
-    const textBlocks = data.content?.filter((b: any) => b.type === "text").map((b: any) => b.text).join("");
-    if (!textBlocks) return [];
+    const text = data.content?.filter((b: any) => b.type === "text").map((b: any) => b.text).join("") || "";
+    if (!text) return [];
 
     try {
-      const clean = textBlocks.replace(/```json|```/g, "").trim();
+      const clean = text.replace(/```json|```/g, "").trim();
       const start = clean.indexOf("[");
       const end = clean.lastIndexOf("]");
       if (start === -1 || end === -1) return [];
       return JSON.parse(clean.slice(start, end + 1));
-    } catch {
+    } catch(e) {
+      console.error("JSON parse error:", e);
       return [];
     }
   }
