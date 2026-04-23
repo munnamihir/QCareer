@@ -8,7 +8,7 @@ import { Job, JobStatus, STATUS_META } from "../../core/models";
 const COLS: JobStatus[] = ["wishlist","applied","screening","interview","offer","rejected"];
 
 @Component({ selector:"app-kanban", standalone:true, imports:[FormsModule,DatePipe], template:`
-<div style="height:100%;display:flex;flex-direction:column;overflow:hidden;">
+<div style="min-height:100vh;display:flex;flex-direction:column;">
   <!-- Header -->
   <div style="padding:1.25rem 2rem;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
     <div>
@@ -18,7 +18,7 @@ const COLS: JobStatus[] = ["wishlist","applied","screening","interview","offer",
     <button (click)="showAddModal.set(true)" class="btn btn-primary">+ Add job</button>
   </div>
   <!-- Board -->
-  <div style="flex:1;overflow:auto;padding:1.25rem 2rem;">
+  <div style="flex:1;overflow-x:auto;overflow-y:visible;padding:1.25rem 2rem;">
     <div class="kanban-board">
       @for (col of cols; track col) {
         <div class="kanban-col">

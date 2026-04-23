@@ -4,7 +4,7 @@ import { JobService } from "../../core/services/job.service";
 import { STATUS_META } from "../../core/models";
 
 @Component({ selector:"app-analytics", standalone:true, template:`
-<div style="height:100%;overflow-y:auto;padding:2rem;position:relative;z-index:1;">
+<div style="min-height:100%;padding:2rem;position:relative;z-index:1;">
   <div style="max-width:1000px;margin:0 auto;">
     <h1 style="font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:700;color:#e2e8f0;letter-spacing:1px;margin-bottom:2rem;">📊 Analytics</h1>
 

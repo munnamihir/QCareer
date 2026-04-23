@@ -6,7 +6,7 @@ import { AuthService } from "../../core/services/auth.service";
 import { JobService } from "../../core/services/job.service";
 import { STATUS_META, JobStatus } from "../../core/models";
 @Component({ selector:"app-dashboard", standalone:true, imports:[RouterLink,DatePipe], template:`
-<div style="height:100%;overflow-y:auto;padding:2rem;position:relative;z-index:1;">
+<div style="min-height:100%;padding:2rem;position:relative;z-index:1;">
   <div style="max-width:1100px;margin:0 auto;">
     <!-- Header -->
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2rem;">

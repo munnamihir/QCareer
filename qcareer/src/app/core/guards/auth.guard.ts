@@ -1,13 +1,22 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { CanActivateFn, Router, UrlTree } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { filter, map, take } from 'rxjs';
-export const authGuard: CanActivateFn = () => {
+
+function waitForAuth(auth: AuthService): Promise<void> {
+  return new Promise(resolve => {
+    if (!auth.loading()) { resolve(); return; }
+    const id = setInterval(() => { if (!auth.loading()) { clearInterval(id); resolve(); } }, 40);
+  });
+}
+
+export const authGuard: CanActivateFn = async (): Promise<boolean | UrlTree> => {
   const auth = inject(AuthService), router = inject(Router);
-  return toObservable(auth.loading).pipe(filter(l => !l), take(1), map(() => auth.isLoggedIn() || router.createUrlTree(['/login'])));
+  await waitForAuth(auth);
+  return auth.isLoggedIn() ? true : router.createUrlTree(['/login']);
 };
-export const guestGuard: CanActivateFn = () => {
+
+export const guestGuard: CanActivateFn = async (): Promise<boolean | UrlTree> => {
   const auth = inject(AuthService), router = inject(Router);
-  return toObservable(auth.loading).pipe(filter(l => !l), take(1), map(() => !auth.isLoggedIn() || router.createUrlTree(['/dashboard'])));
+  await waitForAuth(auth);
+  return !auth.isLoggedIn() ? true : router.createUrlTree(['/dashboard']);
 };

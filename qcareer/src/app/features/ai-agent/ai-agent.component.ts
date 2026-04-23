@@ -6,7 +6,7 @@ const CLAUDE_MODEL = "claude-sonnet-4-20250514";
 const CLAUDE_SYS = "You are QCareer AI, an expert career coach and recruiter. You help job seekers with resume tailoring, cover letters, interview prep, and salary negotiation. Be specific, practical, and encouraging. Use markdown formatting.";
 
 @Component({ selector:"app-ai-agent", standalone:true, imports:[FormsModule], template:`
-<div style="height:100%;display:flex;flex-direction:column;overflow:hidden;">
+<div style="min-height:100vh;display:flex;flex-direction:column;">
   <!-- Header -->
   <div style="padding:1.25rem 2rem;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
     <div>
@@ -27,7 +27,7 @@ const CLAUDE_SYS = "You are QCareer AI, an expert career coach and recruiter. Yo
     </div>
   </div>
 
-  <div style="flex:1;overflow:hidden;padding:1.5rem 2rem;">
+  <div style="flex:1;padding:1.5rem 2rem;overflow-y:auto;">
 
     <!-- ── RESUME TAILOR ── -->
     @if (activeTab()==="resume") {

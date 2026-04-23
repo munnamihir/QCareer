@@ -2,7 +2,7 @@
 import { Component, inject } from "@angular/core";
 import { AuthService } from "../../core/services/auth.service";
 @Component({ selector:"app-settings", standalone:true, template:`
-<div style="height:100%;overflow-y:auto;padding:2rem;position:relative;z-index:1;">
+<div style="min-height:100%;padding:2rem;position:relative;z-index:1;">
   <div style="max-width:680px;margin:0 auto;">
     <h1 style="font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:700;color:#e2e8f0;letter-spacing:1px;margin-bottom:2rem;">⚙ Settings</h1>
     <div class="card" style="overflow:hidden;margin-bottom:1.5rem;">

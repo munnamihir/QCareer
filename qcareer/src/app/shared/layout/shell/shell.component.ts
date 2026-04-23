@@ -1,4 +1,3 @@
-
 import { Component, inject } from "@angular/core";
 import { RouterOutlet, RouterLink, RouterLinkActive } from "@angular/router";
 import { AuthService } from "../../../core/services/auth.service";
@@ -29,7 +28,7 @@ import { AuthService } from "../../../core/services/auth.service";
       <br><button (click)="signOut()" style="margin-top:.5rem;font-size:0.6rem;color:var(--muted);background:none;border:none;cursor:pointer;">sign out</button>
     </div>
   </aside>
-  <main style="flex:1;overflow:hidden;display:flex;flex-direction:column;position:relative;z-index:1;">
+  <main style="flex:1;overflow-y:auto;display:flex;flex-direction:column;position:relative;z-index:1;">
     <router-outlet />
   </main>
 </div>
@@ -38,11 +37,12 @@ export class ShellComponent {
   private auth = inject(AuthService);
   dbUser = this.auth.dbUser; plan = this.auth.plan;
   nav = [
-    { href:"/dashboard", label:"Dashboard",  icon:"▤",  badge:null },
-    { href:"/tracker",   label:"Job Tracker", icon:"🗂️", badge:null },
-    { href:"/ai-agent",  label:"AI Agent",    icon:"⬡",  badge:"6 tools" },
-    { href:"/analytics", label:"Analytics",   icon:"📊", badge:null },
-    { href:"/settings",  label:"Settings",    icon:"⚙",  badge:null },
+    { href:"/dashboard", label:"Dashboard",   icon:"▤",  badge:null },
+    { href:"/jobs",      label:"Find Jobs",    icon:"🔍", badge:"Live" },
+    { href:"/tracker",   label:"Job Tracker",  icon:"🗂️", badge:null },
+    { href:"/ai-agent",  label:"AI Agent",     icon:"⬡",  badge:"6 tools" },
+    { href:"/analytics", label:"Analytics",    icon:"📊", badge:null },
+    { href:"/settings",  label:"Settings",     icon:"⚙",  badge:null },
   ];
   signOut() { this.auth.signOut(); }
 }
