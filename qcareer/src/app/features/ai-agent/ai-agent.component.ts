@@ -2,7 +2,7 @@
 import { Component, signal, ViewChild, ElementRef } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 
-const CLAUDE_MODEL = "claude-sonnet-4-20250514";
+const CLAUDE_MODEL = "claude-sonnet-4-6";
 const CLAUDE_SYS = "You are QCareer AI, an expert career coach and recruiter. You help job seekers with resume tailoring, cover letters, interview prep, and salary negotiation. Be specific, practical, and encouraging. Use markdown formatting.";
 
 @Component({ selector:"app-ai-agent", standalone:true, imports:[FormsModule], template:`
