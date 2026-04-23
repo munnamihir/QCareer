@@ -4,8 +4,11 @@ import { AuthService } from '../services/auth.service';
 
 function waitForAuth(auth: AuthService): Promise<void> {
   return new Promise(resolve => {
-    if (!auth.loading()) { resolve(); return; }
-    const id = setInterval(() => { if (!auth.loading()) { clearInterval(id); resolve(); } }, 40);
+    const check = () => {
+      if (!auth.loading()) { resolve(); return; }
+      setTimeout(check, 40);
+    };
+    check();
   });
 }
 
