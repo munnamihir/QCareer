@@ -1,7 +1,8 @@
 import { Component, inject, signal, computed, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { DatePipe, DecimalPipe } from "@angular/common";
-import { RouterLink } from "@angular/router";
+import { RouterLink, Router } from "@angular/router";
+import { AgentContextService } from "../../core/services/agent-context.service";
 import { JobService } from "../../core/services/job.service";
 import { Job, JobStatus, STATUS_META } from "../../core/models";
 
@@ -292,15 +293,26 @@ const COLS: JobStatus[] = ["wishlist","applied","screening","interview","offer",
       <div>
         <div style="font-size:0.6rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:.5rem;">Quick Actions</div>
         <div style="display:flex;flex-direction:column;gap:.4rem;">
-          <a routerLink="/ai-agent" style="display:flex;align-items:center;gap:.6rem;padding:.6rem .85rem;background:var(--ai-bg);border:1px solid var(--ai-border);border-radius:8px;text-decoration:none;transition:all .15s;" onmouseover="this.style.background='rgba(124,92,252,0.14)'" onmouseout="this.style.background='var(--ai-bg)'">
+          <button (click)="goToAgent(selectedJob()!, 'resume')"
+            style="display:flex;align-items:center;gap:.6rem;padding:.6rem .85rem;background:var(--ai-bg);border:1px solid var(--ai-border);border-radius:8px;cursor:pointer;transition:all .15s;width:100%;"
+            onmouseover="this.style.background='rgba(124,92,252,0.14)'" onmouseout="this.style.background='var(--ai-bg)'">
             <span>📝</span><span style="font-size:.7rem;color:var(--ai2);">Tailor resume for {{ selectedJob()!.company }}</span>
-          </a>
-          <a routerLink="/ai-agent" style="display:flex;align-items:center;gap:.6rem;padding:.6rem .85rem;background:var(--ai-bg);border:1px solid var(--ai-border);border-radius:8px;text-decoration:none;transition:all .15s;" onmouseover="this.style.background='rgba(124,92,252,0.14)'" onmouseout="this.style.background='var(--ai-bg)'">
+          </button>
+          <button (click)="goToAgent(selectedJob()!, 'cover')"
+            style="display:flex;align-items:center;gap:.6rem;padding:.6rem .85rem;background:var(--ai-bg);border:1px solid var(--ai-border);border-radius:8px;cursor:pointer;transition:all .15s;width:100%;"
+            onmouseover="this.style.background='rgba(124,92,252,0.14)'" onmouseout="this.style.background='var(--ai-bg)'">
             <span>✉️</span><span style="font-size:.7rem;color:var(--ai2);">Write cover letter for {{ selectedJob()!.role }}</span>
-          </a>
-          <a routerLink="/ai-agent" style="display:flex;align-items:center;gap:.6rem;padding:.6rem .85rem;background:var(--ai-bg);border:1px solid var(--ai-border);border-radius:8px;text-decoration:none;transition:all .15s;" onmouseover="this.style.background='rgba(124,92,252,0.14)'" onmouseout="this.style.background='var(--ai-bg)'">
+          </button>
+          <button (click)="goToAgent(selectedJob()!, 'interview')"
+            style="display:flex;align-items:center;gap:.6rem;padding:.6rem .85rem;background:var(--ai-bg);border:1px solid var(--ai-border);border-radius:8px;cursor:pointer;transition:all .15s;width:100%;"
+            onmouseover="this.style.background='rgba(124,92,252,0.14)'" onmouseout="this.style.background='var(--ai-bg)'">
             <span>🎤</span><span style="font-size:.7rem;color:var(--ai2);">Practice interview for {{ selectedJob()!.company }}</span>
-          </a>
+          </button>
+          <button (click)="goToAgent(selectedJob()!, 'salary')"
+            style="display:flex;align-items:center;gap:.6rem;padding:.6rem .85rem;background:var(--ai-bg);border:1px solid var(--ai-border);border-radius:8px;cursor:pointer;transition:all .15s;width:100%;"
+            onmouseover="this.style.background='rgba(124,92,252,0.14)'" onmouseout="this.style.background='var(--ai-bg)'">
+            <span>💰</span><span style="font-size:.7rem;color:var(--ai2);">Negotiate salary for {{ selectedJob()!.company }}</span>
+          </button>
         </div>
       </div>
     </div>
@@ -319,6 +331,8 @@ const COLS: JobStatus[] = ["wishlist","applied","screening","interview","offer",
 })
 export class KanbanComponent implements OnInit {
   jobSvc = inject(JobService);
+  private agentCtx = inject(AgentContextService);
+  private router = inject(Router);
   cols = COLS;
   meta = STATUS_META;
   statusKeys = COLS;
@@ -391,6 +405,18 @@ export class KanbanComponent implements OnInit {
     if (this.editNotes === job.notes) return;
     await this.jobSvc.updateJob(job.id, { notes: this.editNotes });
     this.selectedJob.update(j => j ? { ...j, notes: this.editNotes } : j);
+  }
+
+  goToAgent(job: Job, tab: 'resume'|'cover'|'interview'|'salary') {
+    this.agentCtx.set({
+      company: job.company,
+      role: job.role,
+      location: job.location,
+      notes: job.notes || "",
+      url: job.url,
+      tab,
+    });
+    this.router.navigate(["/ai-agent"]);
   }
 
   async onDrop(e: DragEvent, col: JobStatus) {
