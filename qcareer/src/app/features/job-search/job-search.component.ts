@@ -7,6 +7,7 @@ import { JobListingsService, JobListing } from "../../core/services/job-listings
 import { JobService } from "../../core/services/job.service";
 
 const CLAUDE_MODEL = "claude-sonnet-4-6";
+const API_URL = "https://qcareer-api.onrender.com"; // Render Web Service URL
 
 // RSS feeds from major tech companies (CORS-proxied via allorigins)
 const RSS_FEEDS = [
@@ -136,9 +137,17 @@ const PROXY = (url: string) => `https://api.allorigins.win/get?url=${encodeURICo
         <div class="empty-icon">😔</div>
         <div class="empty-title">No results found</div>
         <div class="empty-hint">
-          @if (!apiConnected()) { Connect Claude above to search the web for live job listings beyond QCareer's board. }
-          @else { Try different keywords or broaden your filters. }
+          @if (!apiConnected()) {
+            Connect Claude AI above — it will generate real job listings for any search term instantly.
+          } @else {
+            Try different keywords or broaden your filters.
+          }
         </div>
+        @if (!apiConnected()) {
+          <button (click)="showApiModal.set(true)" class="btn btn-primary" style="margin-top:1rem;font-size:.75rem;">
+            ⬡ Connect Claude to find jobs
+          </button>
+        }
       </div>
     }
 
