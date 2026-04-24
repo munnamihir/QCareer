@@ -1,6 +1,7 @@
 import { Component, signal, inject } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { SlicePipe } from "@angular/common";
+import { RouterLink } from "@angular/router";
 import { Router } from "@angular/router";
 import { JobListingsService, JobListing } from "../../core/services/job-listings.service";
 import { JobService } from "../../core/services/job.service";
@@ -19,7 +20,7 @@ const PROXY = (url: string) => `https://api.allorigins.win/get?url=${encodeURICo
 @Component({
   selector: "app-job-search",
   standalone: true,
-  imports: [FormsModule, SlicePipe],
+  imports: [FormsModule, SlicePipe, RouterLink],
   template: `
 <div style="min-height:100vh;display:flex;flex-direction:column;">
 
@@ -217,21 +218,33 @@ const PROXY = (url: string) => `https://api.allorigins.win/get?url=${encodeURICo
           </div>
 
           <!-- Actions -->
-          <div style="display:flex;gap:.5rem;margin-top:.25rem;">
+          <div style="display:flex;gap:.5rem;margin-top:.5rem;">
             @if (job.apply_url) {
-              <a [href]="job.apply_url" target="_blank" class="btn btn-outline btn-sm" style="flex:1;justify-content:center;text-decoration:none;">View & Apply ↗</a>
+              <a [href]="job.apply_url" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;gap:.4rem;padding:.5rem;border-radius:7px;border:1px solid rgba(99,102,241,0.25);background:rgba(99,102,241,0.06);color:#818cf8;font-size:0.68rem;font-weight:500;text-decoration:none;transition:all .2s;" onmouseover="this.style.background='rgba(99,102,241,0.12)'" onmouseout="this.style.background='rgba(99,102,241,0.06)'">View Job ↗</a>
             } @else if (job.apply_email) {
-              <a [href]="'mailto:'+job.apply_email" class="btn btn-outline btn-sm" style="flex:1;justify-content:center;text-decoration:none;">Apply via Email</a>
+              <a [href]="'mailto:'+job.apply_email" style="flex:1;display:flex;align-items:center;justify-content:center;padding:.5rem;border-radius:7px;border:1px solid rgba(99,102,241,0.25);background:rgba(99,102,241,0.06);color:#818cf8;font-size:0.68rem;text-decoration:none;">Apply via Email</a>
             } @else {
-              <button (click)="openApply(job)" class="btn btn-primary btn-sm" style="flex:1;justify-content:center;">Apply on QCareer</button>
+              <button (click)="openApply(job)" style="flex:1;padding:.5rem;border-radius:7px;border:1px solid rgba(99,102,241,0.25);background:rgba(99,102,241,0.06);color:#818cf8;font-size:0.68rem;cursor:pointer;">Apply</button>
             }
-            <button (click)="addToTracker(job)" [disabled]="tracked().has(job.id)" class="btn btn-sm" style="flex:1;justify-content:center;"
-              [class.btn-ghost]="tracked().has(job.id)"
-              [class.btn-outline]="!tracked().has(job.id)"
-              [style.color]="tracked().has(job.id)?'#10b981':''">
-              {{ tracked().has(job.id) ? "✓ Tracked" : "+ Track" }}
+            <!-- Save to tracker button — prominent -->
+            <button (click)="addToTracker(job,$event)" [disabled]="tracked().has(job.id)"
+              style="flex:1.2;display:flex;align-items:center;justify-content:center;gap:.4rem;padding:.5rem;border-radius:7px;font-size:0.72rem;font-weight:600;cursor:pointer;transition:all .2s;border:none;"
+              [style.background]="tracked().has(job.id)?'rgba(16,185,129,0.12)':' #6366f1'"
+              [style.color]="tracked().has(job.id)?'#10b981':'#fff'"
+              [style.cursor]="tracked().has(job.id)?'default':'pointer'"
+              [style.boxShadow]="!tracked().has(job.id)?'0 4px 12px rgba(99,102,241,0.35)':'none'">
+              @if (tracked().has(job.id)) {
+                <span>✓</span><span>Saved to tracker</span>
+              } @else {
+                <span>+</span><span>Save to tracker</span>
+              }
             </button>
           </div>
+          @if (tracked().has(job.id)) {
+            <div style="margin-top:.4rem;font-size:0.6rem;color:#10b981;font-family:'JetBrains Mono',monospace;text-align:center;">
+              ✓ Saved to your Kanban board · <a routerLink="/tracker" style="color:#6366f1;text-decoration:none;">View tracker →</a>
+            </div>
+          }
         </div>
       }
     </div>
@@ -278,6 +291,18 @@ const PROXY = (url: string) => `https://api.allorigins.win/get?url=${encodeURICo
   </div>
 }
 <style>@keyframes spin{to{transform:rotate(360deg);}}</style>
+
+<!-- Toast notification -->
+@if (toastVisible()) {
+  <div style="position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1a1f3a;border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:.75rem 1.25rem;display:flex;align-items:center;gap:.75rem;z-index:1000;box-shadow:0 8px 30px rgba(0,0,0,0.4);animation:slideUp .3s ease;">
+    <span style="font-size:1rem;">✅</span>
+    <div>
+      <div style="font-size:0.75rem;font-weight:600;color:#10b981;">Saved to Job Tracker!</div>
+      <div style="font-size:0.65rem;color:#64748b;margin-top:1px;">{{ toastMsg() }} · <a routerLink="/tracker" style="color:#6366f1;text-decoration:none;">View Kanban →</a></div>
+    </div>
+  </div>
+}
+<style>@keyframes slideUp{from{opacity:0;transform:translateX(-50%) translateY(10px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}</style>
   `
 })
 export class JobSearchComponent {
@@ -409,7 +434,7 @@ Use realistic companies (Google, Stripe, Airbnb, Shopify, startups etc). Vary lo
 
     if (!resp.ok) {
       const err = await resp.json().catch(()=>({}));
-      console.error("Claude API error:", err);
+      console.error("Claude API error:", JSON.stringify(err));
       return [];
     }
 
@@ -469,16 +494,28 @@ Use realistic companies (Google, Stripe, Airbnb, Shopify, startups etc). Vary lo
     this.applying.set(false);
   }
 
-  async addToTracker(job: any) {
+  async addToTracker(job: any, event?: Event) {
+    if (event) event.stopPropagation();
+    if (this.tracked().has(job.id)) return;
     await this.jobSvc.addJob({
       company: job.company_name,
       role: job.title,
       status: "wishlist",
-      location: job.location,
-      url: job.apply_url || "",
+      location: job.location || "Remote",
+      url: job.apply_url || job.apply_email ? "mailto:"+job.apply_email : "",
+      notes: job.description ? job.description.slice(0, 300) : "",
       excitement: 3,
       currency: "USD",
     });
     this.tracked.update(s => new Set([...s, job.id]));
+    this.showToast(job.title + " at " + job.company_name + " saved!");
+  }
+
+  toastMsg = signal("");
+  toastVisible = signal(false);
+  showToast(msg: string) {
+    this.toastMsg.set(msg);
+    this.toastVisible.set(true);
+    setTimeout(() => this.toastVisible.set(false), 3000);
   }
 }
