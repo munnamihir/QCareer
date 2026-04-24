@@ -490,9 +490,64 @@ Return ONLY this JSON:
 
   async uploadResume(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0]; if (!file) return;
+
+    // For plain text files
+    if (file.type === "text/plain" || file.name.endsWith(".txt")) {
+      const reader = new FileReader();
+      reader.onload = e => { this.resumeText = e.target?.result as string; };
+      reader.readAsText(file);
+      return;
+    }
+
+    // For PDF/DOC — read as base64 and extract text via Claude
+    if (!this.apiConnected()) { this.showApiModal.set(true); return; }
+    this.aiLoading.set(true);
+    this.resumeText = "Extracting text from PDF...";
+
     const reader = new FileReader();
-    reader.onload = e => { this.resumeText = e.target?.result as string; };
-    reader.readAsText(file);
+    reader.onload = async (e) => {
+      try {
+        const base64 = (e.target?.result as string).split(",")[1];
+        const resp = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": this.apiKey(),
+            "anthropic-version": "2023-06-01",
+            "anthropic-dangerous-direct-browser-access": "true"
+          },
+          body: JSON.stringify({
+            model: MODEL,
+            max_tokens: 4000,
+            system: "Extract and return the complete text content from this resume document. Preserve the structure (sections, bullet points). Return ONLY the resume text, no commentary.",
+            messages: [{
+              role: "user",
+              content: [
+                {
+                  type: "document",
+                  source: {
+                    type: "base64",
+                    media_type: file.type === "application/pdf" ? "application/pdf" : "application/octet-stream",
+                    data: base64
+                  }
+                },
+                { type: "text", text: "Extract all text from this resume document. Preserve formatting with bullet points and sections." }
+              ]
+            }]
+          })
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          this.resumeText = data.content?.[0]?.text || "Could not extract text. Please paste your resume manually.";
+        } else {
+          this.resumeText = "Could not read PDF. Please paste your resume text manually.";
+        }
+      } catch(e) {
+        this.resumeText = "Error reading file. Please paste your resume text manually.";
+      }
+      this.aiLoading.set(false);
+    };
+    reader.readAsDataURL(file);
   }
 
   // ── Cover Letter ──────────────────────────────────────────────────────────
