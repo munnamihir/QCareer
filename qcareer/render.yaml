@@ -1,0 +1,25 @@
+services:
+  # Static site — Angular frontend
+  - type: web
+    name: qcareer
+    env: static
+    rootDir: qcareer
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist/qcareer/browser
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  # Web service — Express job search API
+  - type: web
+    name: qcareer-api
+    env: node
+    rootDir: qcareer/server
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: PORT
+        value: 3001
+      - key: NODE_ENV
+        value: production
