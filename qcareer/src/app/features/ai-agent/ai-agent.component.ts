@@ -483,7 +483,32 @@ Return ONLY this JSON:
     };
     await this.claude(
       SYS + this.jobContext(),
-      `${modeInstructions[this.tailorMode]}\n\nMY RESUME:\n${this.resumeText}\n\nAfter the tailored content, add a section called "## ATS Match Analysis" with:\n- Match score estimate (X/100)\n- Top 5 keywords from JD that are present\n- Top 5 missing keywords to add\n- 3 specific improvement suggestions`,
+      `${modeInstructions[this.tailorMode]}
+
+MY RESUME:
+${this.resumeText}
+
+IMPORTANT FORMATTING RULES for the tailored resume output:
+- Use clean plain-text formatting that looks great when downloaded as .txt
+- Use ALL CAPS for section headers (PROFESSIONAL SUMMARY, EXPERIENCE, SKILLS, EDUCATION)
+- Use "—" or "|" as separators for job titles/dates: "Software Engineer | Google | 2021–2024"
+- Use "•" for bullet points (not "-" or "*")
+- Leave a blank line between sections
+- Keep the resume scannable and professional
+- Do NOT use markdown headers (##), asterisks for bold, or any markdown syntax
+- The output should look like a real, clean resume when copied into a text file
+
+After the resume, add this section separated by "=" signs:
+================================================
+ATS MATCH ANALYSIS
+================================================
+Match Score: X/100
+Keywords Present: keyword1, keyword2, keyword3...
+Missing Keywords to Add: keyword1, keyword2...
+Top 3 Improvements:
+1. ...
+2. ...
+3. ...`,
       chunk => { out+=chunk; this.resumeOutput.set(this.fmt(out)); }
     );
   }
@@ -651,8 +676,35 @@ Requirements:
   // ── Utils ─────────────────────────────────────────────────────────────────
   copyHtml(html: string) { navigator.clipboard.writeText(html.replace(/<[^>]*>/g,"")); }
   downloadTxt(html: string, filename: string) {
-    const text = html.replace(/<[^>]*>/g,"").replace(/&nbsp;/g," ").replace(/&lt;/g,"<").replace(/&gt;/g,">");
-    const blob = new Blob([text],{type:"text/plain"});
-    const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=filename; a.click();
+    // Convert HTML to clean readable text
+    let text = html
+      // Convert <br> and block elements to newlines first
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/p>/gi, "\n\n")
+      .replace(/<\/div>/gi, "\n")
+      .replace(/<\/h[1-6]>/gi, "\n")
+      .replace(/<\/li>/gi, "\n")
+      // Remove all remaining HTML tags
+      .replace(/<[^>]*>/g, "")
+      // Decode HTML entities
+      .replace(/&nbsp;/g, " ")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&amp;/g, "&")
+      .replace(/&#8226;/g, "•")
+      .replace(/&bull;/g, "•")
+      // Clean up excessive newlines (max 2 in a row)
+      .replace(/\n{3,}/g, "\n\n")
+      // Clean up spaces
+      .replace(/[ \t]+/g, " ")
+      .replace(/^ /gm, "")
+      .trim();
+
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
   }
 }
