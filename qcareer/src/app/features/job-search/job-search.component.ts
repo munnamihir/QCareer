@@ -388,7 +388,7 @@ export class JobSearchComponent {
 
   // ── Claude web search for jobs ────────────────────────────────────────────
   private async aiWebSearch(query: string): Promise<any[]> {
-    const prompt = `Generate 8 realistic "${query}" job listings that reflect the current job market in 2025.
+    const prompt = `Generate 20 realistic "${query}" job listings that reflect the current job market in 2025.
 
 Return ONLY a valid JSON array with no markdown, no explanation. Each object must have exactly these fields:
 [
