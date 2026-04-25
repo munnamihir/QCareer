@@ -2,7 +2,6 @@ import { Component, inject, signal, computed, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { DatePipe, DecimalPipe } from "@angular/common";
 import { RouterLink, Router } from "@angular/router";
-import { AgentContextService } from "../../core/services/agent-context.service";
 import { JobService } from "../../core/services/job.service";
 import { Job, JobStatus, STATUS_META } from "../../core/models";
 
@@ -331,7 +330,6 @@ const COLS: JobStatus[] = ["wishlist","applied","screening","interview","offer",
 })
 export class KanbanComponent implements OnInit {
   jobSvc = inject(JobService);
-  private agentCtx = inject(AgentContextService);
   private router = inject(Router);
   cols = COLS;
   meta = STATUS_META;
@@ -408,15 +406,14 @@ export class KanbanComponent implements OnInit {
   }
 
   goToAgent(job: Job, tab: 'resume'|'cover'|'interview'|'salary') {
-    this.agentCtx.set({
+    this.router.navigate(["/ai-agent"], { queryParams: {
       company: job.company,
       role: job.role,
-      location: job.location,
-      notes: job.notes || "",
-      url: job.url,
+      location: job.location || "",
+      notes: (job.notes || "").slice(0, 500),
+      url: job.url || "",
       tab,
-    });
-    this.router.navigate(["/ai-agent"]);
+    }});
   }
 
   async onDrop(e: DragEvent, col: JobStatus) {
