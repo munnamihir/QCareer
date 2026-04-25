@@ -1,6 +1,6 @@
 import { Component, signal, ViewChild, ElementRef, OnInit, inject } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { AgentContextService } from "../../core/services/agent-context.service";
+import { ActivatedRoute } from "@angular/router";
 
 const MODEL = "claude-sonnet-4-6";
 const SYS = "You are QCareer AI, an expert career coach. You have deep knowledge of resume writing, cover letters, interview preparation, and salary negotiation. Be specific, practical, and tailor everything to the exact job provided. Use markdown.";
@@ -328,33 +328,17 @@ const SYS = "You are QCareer AI, an expert career coach. You have deep knowledge
 })
 export class AiAgentComponent implements OnInit {
   @ViewChild("ivScroll") ivScrollEl!: ElementRef<HTMLDivElement>;
-  private agentCtx = inject(AgentContextService);
+  private route = inject(ActivatedRoute);
 
   ngOnInit() {
-    const ctx = this.agentCtx.ctx();
-    if (!ctx) return;
+    const p = this.route.snapshot.queryParams;
+    if (!p['company'] && !p['role']) return;
 
-    // Pre-fill job context
-    this.jobTitle.set(ctx.company + " — " + ctx.role);
-    this.jobCompany.set(ctx.company);
-    this.jobTitle.set(ctx.role);
-
-    // Use notes as job description if available
-    if (ctx.notes) {
-      this.jobDescription = ctx.notes;
-      this.jobLoaded.set(true);
-    }
-
-    // Pre-fill URL if available
-    if (ctx.url) {
-      this.jobUrl = ctx.url;
-    }
-
-    // Switch to the right tab
-    this.activeTab.set(ctx.tab);
-
-    // Clear context so it doesn't persist on next visit
-    this.agentCtx.clear();
+    if (p['role'])    this.jobTitle.set(p['role']);
+    if (p['company']) this.jobCompany.set(p['company']);
+    if (p['notes'])   { this.jobDescription = p['notes']; this.jobLoaded.set(true); }
+    if (p['url'])     this.jobUrl = p['url'];
+    if (p['tab'])     this.activeTab.set(p['tab']);
   }
 
   tabs = [
