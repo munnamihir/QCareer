@@ -4,7 +4,7 @@ export interface AgentContext {
   company: string;
   role: string;
   location?: string;
-  notes?: string;       
+  notes?: string;      
   url?: string;
   tab: 'resume' | 'cover' | 'interview' | 'salary';
 }
