@@ -28,7 +28,7 @@ app.post("/api/jobs/search", async (req, res) => {
     // 1. Remotive — remote jobs (CORS-friendly)
     (async () => {
       try {
-        const url = `https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}&limit=15`;
+        const url = `https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}&limit=30`;
         const r = await fetch(url, { timeout: 8000 });
         if (!r.ok) return;
         const d = await r.json();
@@ -59,7 +59,7 @@ app.post("/api/jobs/search", async (req, res) => {
         const r = await fetch(url, { timeout: 8000 });
         if (!r.ok) return;
         const d = await r.json();
-        const jobs = (d.results || []).slice(0,12).map(j => ({
+        const jobs = (d.results || []).slice(0,20).map(j => ({
           id:          "muse_" + j.id,
           title:       j.name,
           company_name:j.company?.name || "Unknown",
@@ -69,7 +69,7 @@ app.post("/api/jobs/search", async (req, res) => {
           experience_level: (j.levels?.[0]?.short_name || "mid").toLowerCase(),
           salary_min:  null, salary_max: null, currency: "USD",
           description: (j.contents || "").replace(/<[^>]*>/g,"").slice(0,400),
-          skills:      [...(j.categories||[]).map(c=>c.name), ...(j.levels||[]).map(l=>l.name)].slice(0,6),
+          skills:      [...(j.categories||[]).map(c=>c.name), ...(j.levels||[]).map(l=>l.name)].slice(0,12),
           apply_url:   j.refs?.landing_page || "",
           source:      "The Muse",
           created_at:  j.publication_date || new Date().toISOString(),
@@ -84,11 +84,11 @@ app.post("/api/jobs/search", async (req, res) => {
       try {
         // Adzuna has a free API — no key needed for basic search
         const country = "us";
-        const url = `https://api.adzuna.com/v1/api/jobs/${country}/search/1?app_id=test&app_key=test&results_per_page=10&what=${encodeURIComponent(query)}${location?"&where="+encodeURIComponent(location):""}`;
+        const url = `https://api.adzuna.com/v1/api/jobs/${country}/search/1?app_id=test&app_key=test&results_per_page=20&what=${encodeURIComponent(query)}${location?"&where="+encodeURIComponent(location):""}`;
         const r = await fetch(url, { timeout: 8000 });
         if (!r.ok) return;
         const d = await r.json();
-        const jobs = (d.results || []).slice(0,10).map((j,i) => ({
+        const jobs = (d.results || []).slice(0,20).map((j,i) => ({
           id:          "adz_" + i + "_" + Date.now(),
           title:       j.title,
           company_name:j.company?.display_name || "Company",
@@ -113,14 +113,14 @@ app.post("/api/jobs/search", async (req, res) => {
     // 4. GitHub Jobs via Remotive category filter
     (async () => {
       try {
-        const url = `https://remotive.com/api/remote-jobs?category=software-dev&limit=8`;
+        const url = `https://remotive.com/api/remote-jobs?category=software-dev&limit=20`;
         const r = await fetch(url, { timeout: 8000 });
         if (!r.ok) return;
         const d = await r.json();
         const filtered = (d.jobs || [])
           .filter(j => j.title.toLowerCase().includes(query.toLowerCase()) ||
                        (j.tags||[]).some(t => t.toLowerCase().includes(query.toLowerCase())))
-          .slice(0,6)
+          .slice(0,12)
           .map(j => ({
             id:          "gh_" + j.id,
             title:       j.title,
@@ -131,7 +131,7 @@ app.post("/api/jobs/search", async (req, res) => {
             experience_level: "mid",
             salary_min:  null, salary_max: null, currency: "USD",
             description: (j.description||"").replace(/<[^>]*>/g,"").slice(0,400),
-            skills:      (j.tags||[]).slice(0,6),
+            skills:      (j.tags||[]).slice(0,12),
             apply_url:   j.url,
             source:      "Remotive Dev",
             created_at:  j.publication_date || new Date().toISOString(),
@@ -155,7 +155,7 @@ app.post("/api/jobs/search", async (req, res) => {
             role: "user",
             content: `Search for "${query}" jobs${location ? " in " + location : ""}${level ? " at " + level + " level" : ""}${type ? " " + type : ""}. 
 
-Find 10 real, active job postings from LinkedIn, Indeed, Glassdoor, company career pages, or job boards.
+Find 20 real, active job postings from multiple sources from LinkedIn, Indeed, Glassdoor, company career pages, or job boards.
 
 Return ONLY this JSON array (no markdown fences, no text before or after):
 [
