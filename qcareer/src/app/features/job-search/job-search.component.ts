@@ -388,82 +388,92 @@ export class JobSearchComponent {
 
   // ── Claude web search for jobs ────────────────────────────────────────────
   private async aiWebSearch(query: string): Promise<any[]> {
-    const prompt = `Generate 20 realistic "${query}" job listings that reflect the current job market in 2025.
+    const segments = [
+      { seg: "Google Meta Apple Amazon Microsoft Netflix Stripe Airbnb Shopify Uber", level: "senior lead" },
+      { seg: "Google Meta Apple Amazon Microsoft Netflix Stripe Airbnb Shopify Uber", level: "junior mid" },
+      { seg: "Figma Notion Linear Vercel Supabase Anthropic OpenAI Databricks Snowflake Datadog", level: "mid senior" },
+      { seg: "Plaid Brex Rippling Carta Robinhood Coinbase Cloudflare Fastly Twilio Airtable", level: "mid senior" },
+      { seg: "Y Combinator startups AI companies climate tech health tech consumer apps", level: "junior mid senior" },
+      { seg: "GitLab Automattic Zapier Buffer remote-first global distributed companies", level: "mid senior lead" },
+    ];
 
-Return ONLY a valid JSON array with no markdown, no explanation. Each object must have exactly these fields:
-[
-  {
-    "id": "ai_1",
-    "title": "job title",
-    "company_name": "real company name",
-    "location": "City, State or Remote",
-    "remote_type": "remote",
-    "job_type": "full_time",
-    "experience_level": "mid",
-    "salary_min": 120000,
-    "salary_max": 160000,
-    "currency": "USD",
-    "equity_min": null,
-    "equity_max": null,
-    "description": "2-3 sentence description of the role and team",
-    "requirements": null,
-    "benefits": null,
-    "skills": ["skill1", "skill2", "skill3", "skill4"],
-    "apply_url": "https://careers.company.com",
-    "apply_email": null,
-    "source": "scraped",
-    "status": "active",
-    "featured": false,
-    "views": 0,
-    "applications_count": 0,
-    "created_at": "2025-04-20",
-    "expires_at": null,
-    "aiScore": null,
-    "aiReason": null
+    const allJobs: any[] = [];
+
+    await Promise.all(segments.map(async ({ seg, level }, idx) => {
+      // Ask for pipe-delimited data — NO JSON, NO quotes, NO apostrophes possible
+      const prompt = `List 10 "${query}" job openings from these companies: ${seg}. Focus on ${level} roles.
+
+Format each job on ONE line using pipes. No JSON. No quotes. Just plain text lines:
+TITLE|COMPANY|LOCATION|REMOTE_TYPE|JOB_TYPE|LEVEL|SALARY_MIN|SALARY_MAX|SKILLS|APPLY_URL
+
+Rules:
+- REMOTE_TYPE: remote, hybrid, or onsite
+- JOB_TYPE: full_time or contract  
+- LEVEL: junior, mid, senior, or lead
+- SALARY_MIN and SALARY_MAX: numbers only in USD
+- SKILLS: comma separated, max 5 skills
+- APPLY_URL: real careers page URL
+- NO extra text before or after the lines
+
+Example:
+Senior Software Engineer|Google|Mountain View CA|hybrid|full_time|senior|180000|250000|TypeScript,React,Node.js,GCP,Kubernetes|https://careers.google.com/jobs
+Staff Engineer|Stripe|Remote|remote|full_time|lead|200000|280000|Golang,Distributed Systems,Ruby,AWS,PostgreSQL|https://stripe.com/jobs`;
+
+      try {
+        const resp = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": this.apiKey(),
+            "anthropic-version": "2023-06-01",
+            "anthropic-dangerous-direct-browser-access": "true"
+          },
+          body: JSON.stringify({
+            model: CLAUDE_MODEL,
+            max_tokens: 3000,
+            system: "You output plain pipe-delimited job listings. No JSON. No markdown. No explanations. Just lines of text separated by pipes.",
+            messages: [{ role: "user", content: prompt }]
+          })
+        });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const text = data.content?.filter((b: any) => b.type === "text").map((b: any) => b.text).join("") || "";
+
+        // Parse pipe-delimited lines — zero JSON parse errors possible
+        const lines = text.split("\n").map((l: string) => l.trim()).filter((l: string) => l.includes("|") && l.split("|").length >= 8);
+
+        for (const line of lines) {
+          const parts = line.split("|");
+          if (parts.length < 8) continue;
+          const [title, company, location, remoteType, jobType, level, salMin, salMax, skills, applyUrl] = parts;
+          if (!title || !company) continue;
+          allJobs.push({
+            id: `ai_${idx}_${allJobs.length}_${Date.now()}`,
+            title: title.trim(),
+            company_name: company.trim(),
+            location: location?.trim() || "Remote",
+            remote_type: ["remote","hybrid","onsite"].includes(remoteType?.trim()) ? remoteType.trim() : "remote",
+            job_type: ["full_time","contract","part_time"].includes(jobType?.trim()) ? jobType.trim() : "full_time",
+            experience_level: ["junior","mid","senior","lead","intern"].includes(level?.trim()) ? level.trim() : "mid",
+            salary_min: parseInt(salMin) || null,
+            salary_max: parseInt(salMax) || null,
+            currency: "USD",
+            description: `${title?.trim()} role at ${company?.trim()}. Skills: ${skills?.trim() || "See job posting"}.`,
+            skills: (skills || "").split(",").map((s: string) => s.trim()).filter(Boolean).slice(0, 6),
+            apply_url: applyUrl?.trim() || "",
+            source: "AI",
+            created_at: new Date().toISOString(),
+            featured: false, views: 0, applications_count: 0,
+            aiScore: null, aiReason: null,
+          });
+        }
+      } catch(e) { console.error("Segment error", e); }
+    }));
+
+    return allJobs;
   }
-]
 
-Use realistic companies (Google, Stripe, Airbnb, Shopify, startups etc). Vary locations and salary ranges. Return ONLY the JSON array.`;
-
-    const resp = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": this.apiKey(),
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"
-      },
-      body: JSON.stringify({
-        model: CLAUDE_MODEL,
-        max_tokens: 4000,
-        system: "You are a job board assistant. Return ONLY valid JSON arrays. No markdown fences. No explanation. Just the raw JSON array.",
-        messages: [{ role: "user", content: prompt }]
-      })
-    });
-
-    if (!resp.ok) {
-      const err = await resp.json().catch(()=>({}));
-      console.error("Claude API error:", JSON.stringify(err));
-      return [];
-    }
-
-    const data = await resp.json();
-    const text = data.content?.filter((b: any) => b.type === "text").map((b: any) => b.text).join("") || "";
-    if (!text) return [];
-
-    try {
-      const clean = text.replace(/```json|```/g, "").trim();
-      const start = clean.indexOf("[");
-      const end = clean.lastIndexOf("]");
-      if (start === -1 || end === -1) return [];
-      return JSON.parse(clean.slice(start, end + 1));
-    } catch(e) {
-      console.error("JSON parse error:", e);
-      return [];
-    }
-  }
-
-  // ── AI match scoring ───────────────────────────────────────────────────────
+    // ── AI match scoring ───────────────────────────────────────────────────────
   async aiScoreAll() {
     if (!this.apiConnected() || !this.results().length) return;
     this.scoring.set(true);
